@@ -24,8 +24,6 @@ contract FundoorProject is ERC1155, Ownable {
     bool private projectBlocked;
     bool private projectWithdrawn;
 
-    bool private hasCommunityApprovalLimit;
-
     event projectInitiated(address projectOwner, uint256 releaseEpoch);
     event projectCurrencyAdded(IERC20 newCurrency);
     event projectOwnerChanged(address newOwner);
@@ -63,13 +61,12 @@ contract FundoorProject is ERC1155, Ownable {
         _;
     }
 
-    constructor(address _projectOwner, IERC20 _currency, address _controllerAddress, address _contributionRouterAddress, bool _communityOversight, bool _hasCommunityApprovalLimit, uint256 _releaseEpoch) ERC1155("") {
+    constructor(address _projectOwner, IERC20 _currency, address _controllerAddress, address _contributionRouterAddress, bool _communityOversight, uint256 _releaseEpoch) ERC1155("") {
         controllerAddress = _controllerAddress;
         contributionRouterAddress = _contributionRouterAddress;
 
         if(_communityOversight) {
             overseer = new FundoorProjectOversight(address(this));
-            hasCommunityApprovalLimit = _hasCommunityApprovalLimit;
         }
 
         projectOwner = _projectOwner;
@@ -124,7 +121,7 @@ contract FundoorProject is ERC1155, Ownable {
         uint256 balance = _currency.balanceOf(address(this));
         uint256 toWithdraw = FundoorLib.min(_withdrawalAmount, balance);
         // if community approval required
-        if(hasCommunityApprovalLimit) {
+        if(address(overseer) != address(0)) {
             require(overseer.getApprovedWithdrawalAmount(_currency) > 0, "None approved");
             toWithdraw = FundoorLib.min(overseer.getApprovedWithdrawalAmount(_currency), _withdrawalAmount);
             overseer.completeWithdrawal(_currency, toWithdraw);

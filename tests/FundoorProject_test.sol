@@ -80,38 +80,33 @@ contract FundoorProjectTest is ERC1155Holder {
         Assert.equal(project.balanceOf(address(this), tokenCurrencyId), testingContributionAmount, "");
     }
 
+    function initiateProject(IERC20 _currency, bool _communityOversight, uint256 _releaseEpoch) private returns (FundoorProject, address) {
+        bool success = factory.initiateProject(IERC20(_currency), address(controller), address(router), _communityOversight, _releaseEpoch);
+        Assert.ok(success, "");
+        address[] memory projects = factory.getProjects();
+        address projectAddress = projects[projects.length - 1];
+        FundoorProject project = FundoorProject(projectAddress);
+        return (project, projectAddress);
+    }
+
     // Test 1 - test a project with no withdrawal delay and no community oversight
     function testSimpleProject() public {
         // initiate a project
-        // no oversight
-        bool communityOversight = false;
-        // no community oversight
-        bool hasCommunityApprovalLimit = false;
-        // immediate release
-        uint256 releaseEpoch = block.timestamp;
-        // test a - initiate new project
-        bool success = factory.initiateProject(IERC20(token1), address(controller), address(router), communityOversight, hasCommunityApprovalLimit, releaseEpoch);
-        Assert.ok(success, "");
+        (FundoorProject project, address projectAddress) = initiateProject(IERC20(token1), false, block.timestamp);
 
-        // test b - check if the new project is initiated and its address stored
-        address[] memory projects = factory.getProjects();
-        Assert.equal(projects.length, 1, "");
-
-        // test c - check if the new project is correctly initiated and ready to receive
-        address projectAddress = projects[projects.length - 1];
-        FundoorProject project = FundoorProject(projectAddress);
+        // test a - check if the new project is correctly initiated and ready to receive
         Assert.ok(project.getProjectActive(), "");
 
-        // test d - contribute token1
-        // contribute
+        // test b - contribute token1
+        // contribute token1
         contributeToProject(projectAddress, token1, 100);
         
-        // test e - add new currency to the project
+        // test c - add new currency to the project
         Assert.ok(controller.addProjectCurrency(projectAddress, IERC20(token2)), "");
-        // contribute
+        // contribute token2
         contributeToProject(projectAddress, token2, 100);
 
-        // test f - withdrawing - all erc20 should go back
+        // test d - withdrawing - all erc20 should go back
         Assert.ok(controller.withdrawProjectBalance(projectAddress, token1, 100, false), "");
         Assert.ok(controller.withdrawProjectBalance(projectAddress, token2, 100, true), "");
         // no token at project address
@@ -122,19 +117,10 @@ contract FundoorProjectTest is ERC1155Holder {
         Assert.equal(token2.balanceOf(address(this)), 10000, "");
     }
 
-    function initiateProject(IERC20 currency, bool communityOversight, bool hasCommunityApprovalLimit, uint256 releaseEpoch) private returns (FundoorProject, address) {
-        bool success = factory.initiateProject(IERC20(currency), address(controller), address(router), communityOversight, hasCommunityApprovalLimit, releaseEpoch);
-        Assert.ok(success, "");
-        address[] memory projects = factory.getProjects();
-        address projectAddress = projects[projects.length - 1];
-        FundoorProject project = FundoorProject(projectAddress);
-        return (project, projectAddress);
-    }
-
     // Test 2 - test time delayed contract
     function testDelayedProject() public {
         uint256 timeToAdd = 120;
-        (, address projectAddress) = initiateProject(IERC20(token1), false, false, block.timestamp + timeToAdd);
+        (, address projectAddress) = initiateProject(IERC20(token1), false, block.timestamp + timeToAdd);
         contributeToProject(projectAddress, token1, 100);
         // test a - early withdrawal
         try controller.withdrawProjectBalance(projectAddress, token1, 100, false) returns (bool r) {

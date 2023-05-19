@@ -8,7 +8,7 @@ contract FundoorProjectFactory {
     address[] private projects;
 
     // initiate a new project
-    function initiateProject(IERC20 _currency, address _controller, address _router, bool _communityOversight, bool _hasCommunityApprovalLimit, uint256 _releaseEpoch) 
+    function initiateProject(IERC20 _currency, address _controller, address _router, bool _communityOversight, uint256 _releaseEpoch) 
     public returns (bool) {
         FundoorProject newProject = new FundoorProject(
                                         msg.sender,
@@ -16,7 +16,6 @@ contract FundoorProjectFactory {
                                         _controller,
                                         _router,
                                         _communityOversight,
-                                        _hasCommunityApprovalLimit,
                                         _releaseEpoch
                                         );
         projects.push(address(newProject));

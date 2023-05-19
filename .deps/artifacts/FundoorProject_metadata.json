@@ -33,11 +33,6 @@
 						"type": "bool"
 					},
 					{
-						"internalType": "bool",
-						"name": "_hasCommunityApprovalLimit",
-						"type": "bool"
-					},
-					{
 						"internalType": "uint256",
 						"name": "_releaseEpoch",
 						"type": "uint256"
@@ -586,6 +581,19 @@
 			},
 			{
 				"inputs": [],
+				"name": "getOverseerAddress",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
 				"name": "getProjectActive",
 				"outputs": [
 					{
@@ -818,6 +826,49 @@
 			{
 				"inputs": [
 					{
+						"internalType": "uint256",
+						"name": "_newValue",
+						"type": "uint256"
+					}
+				],
+				"name": "setProjectReleaseTime",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_proposalId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_newValue",
+						"type": "uint256"
+					}
+				],
+				"name": "setProposalDeadline",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
 						"internalType": "bytes4",
 						"name": "interfaceId",
 						"type": "bytes4"
@@ -998,19 +1049,19 @@
 			]
 		},
 		".deps/FundoorProject.sol": {
-			"keccak256": "0x4cbe93c02d8c6f1fd30aa98afa7a61785818300845f510d4c13e12d7dd508f73",
+			"keccak256": "0x8b889eab5a0d073d4256cffe0c70e4601de41b499aa53953111154c3840aa631",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://a5dfe42e073ac24d5ad886099c51a85a62dda7f34fc34d5e3aca6595da08fb34",
-				"dweb:/ipfs/Qmb3q5v9FvqdCrjuszFwTren9DNT5KLxdHQ2uPJRE2FEVQ"
+				"bzz-raw://81c22894d07f9e83ab29c3b0bf84ec649ade006cfb7c2a2cc2a3da54e4634c0f",
+				"dweb:/ipfs/QmNwjhtU3FuHtB4aSGWpkQEmgS9HHv64V8kDMqEDdVvhDv"
 			]
 		},
 		".deps/FundoorProjectOversight.sol": {
-			"keccak256": "0x86fd1833d6793cf12e1df815d22a488d95b360c534f2ed34d64e7afe752c1417",
+			"keccak256": "0x7de2f413b082897568d8982d49dc5a24d112de1a87d4f95572cfd5b94e3810f5",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://726f71dd23446115a7e31a0194a8a8427a02db3c4c8b15cc35d40fa3982b5ff4",
-				"dweb:/ipfs/QmYMTLmgnKgBNwLPuczuqft94nNYDgjjTeGkzgURx8ngCy"
+				"bzz-raw://d20624f519e378d3527f5ec7713d5b10abec4596ad6517e846c5fc4eda29d762",
+				"dweb:/ipfs/Qmc2nvdwSKfzjbr5piMbDJbsWyBjZSqSigo3p4SKWyNAFs"
 			]
 		},
 		"@openzeppelin/contracts/access/Ownable.sol": {

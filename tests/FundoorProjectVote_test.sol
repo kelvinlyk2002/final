@@ -66,22 +66,22 @@ contract FundoorProjectTest is ERC1155Holder {
         uint256 projectBalanceBefore = token.balanceOf(projectAddress);
         uint256 contributorBalanceBefore = token.balanceOf(address(this));
 
-        Assert.ok(router.contribute(projectAddress, token, testingContributionAmount), "");
+        Assert.ok(router.contribute(projectAddress, token, testingContributionAmount), "Contribution not implemented correctly");
 
         uint256 projectBalanceAfter = token.balanceOf(projectAddress);
         uint256 contributorBalanceAfter = token.balanceOf(address(this));
 
         // confirm token has been transferred to the project
-        Assert.equal(projectBalanceAfter - projectBalanceBefore, testingContributionAmount, "");
-        Assert.equal(contributorBalanceBefore - contributorBalanceAfter, testingContributionAmount, "");
+        Assert.equal(projectBalanceAfter - projectBalanceBefore, testingContributionAmount, "token not transferred correctly");
+        Assert.equal(contributorBalanceBefore - contributorBalanceAfter, testingContributionAmount, "token not transferred correctly");
 
         // confirm an NFT receipt is received by the contributor
         FundoorProject project = FundoorProject(projectAddress);
-        Assert.equal(project.balanceOf(address(this), tokenCurrencyId), testingContributionAmount, "");
+        Assert.equal(project.balanceOf(address(this), tokenCurrencyId), testingContributionAmount, "NFT receipt not transferred correctly");
     }
 
-    function initiateProject(IERC20 currency, bool communityOversight, bool hasCommunityApprovalLimit, uint256 releaseEpoch) private returns (FundoorProject, address) {
-        bool success = factory.initiateProject(IERC20(currency), address(controller), address(router), communityOversight, hasCommunityApprovalLimit, releaseEpoch);
+    function initiateProject(IERC20 currency, bool communityOversight, uint256 releaseEpoch) private returns (FundoorProject, address) {
+        bool success = factory.initiateProject(IERC20(currency), address(controller), address(router), communityOversight, releaseEpoch);
         Assert.ok(success, "");
         address[] memory projects = factory.getProjects();
         address projectAddress = projects[projects.length - 1];
@@ -90,27 +90,58 @@ contract FundoorProjectTest is ERC1155Holder {
     }
 
     // Test 3 - test community oversight and voting
-    function testDelayedProject() public {
-        (FundoorProject project, address projectAddress) = initiateProject(IERC20(token1), true, false, block.timestamp);
+    function testVotableProject() public {
+        (FundoorProject project, address projectAddress) = initiateProject(IERC20(token1), true, block.timestamp);
         FundoorProjectOversight overseer = FundoorProjectOversight(project.getOverseerAddress());
         contributeToProject(projectAddress, token1, 100);
 
-        // test a - withdrawal should work before any community action
-        uint256 beforeWithdrawal = token1.balanceOf(address(this));
-        Assert.ok(controller.withdrawProjectBalance(projectAddress, token1, 10, false))
-        Assert.equal(token1.balanceOf(address(this)), beforeWithdrawal + 10, "");
+        // test a - withdrawal should not work any community approval
+        try controller.withdrawProjectBalance(projectAddress, token1, 100, false) returns (bool r) {
+            Assert.equal(r, false, "Did not fail");
+        } catch Error(string memory) {
+            // correctly reverted
+            Assert.ok(true, "Premature withdrawal caught");
+            // funds should remain with the project
+            Assert.equal(token1.balanceOf(projectAddress), 100, "Funds left unexpectedly");
+        } catch {
+            Assert.ok(false, "Other error");
+        }
 
-        // test b - community propose block
-        Assert.ok(overseer.propose(1, token1, 25, block.timestamp + 604800));
+        // test b - over-request should fail
+        try overseer.requestWithdrawalApproval(token1, 120) returns (bool r) {
+            Assert.equal(r, false, "Did not fail");
+        } catch Error(string memory) {
+            // correctly reverted
+            Assert.ok(true, "Over request caught");
+        } catch {
+            Assert.ok(false, "Other error");
+        }
+        
+        // test c - request 100 should pass
+        Assert.ok(overseer.requestWithdrawalApproval(token1, 100), "Request not implemented correctly");
 
-        // try controller.withdrawProjectBalance(projectAddress, token1, 100, false) returns (bool r) {
-        //     Assert.equal(r, false, "Did not fail");
-        // } catch Error(string memory) {
-        //     // correctly reverted
-        //     Assert.ok(true, "Premature withdrawal caught");
-        // } catch {
-        //     Assert.ok(false, "Other error");
-        // }
+        // test d - objected withdrawal should not be processed
+        // authorize NFT to be transferred
+        project.setApprovalForAll(address(overseer), true);
+
+        // deposit NFT to vote
+        Assert.ok(overseer.depositNFT(token1, 55), "Deposit NFT not implemented correctly");
+        // check balance
+        Assert.equal(project.balanceOf(address(overseer), token1currencyId), 55, "NFT not transferred");
+        Assert.equal(project.balanceOf(address(this), token1currencyId), 45, "NFT not transferred");
+        // check voting power
+        uint256 proposalId = overseer.getProposalNonce() - 1;
+        Assert.equal(overseer.getVoteWeight(address(this), proposalId), 55, "Voting weight incorrect");
+        // uint256 beforeWithdrawal = token1.balanceOf(address(this));
+        // Assert.ok(controller.withdrawProjectBalance(projectAddress, token1, 10, false), "");
+        // Assert.equal(token1.balanceOf(address(this)), beforeWithdrawal + 10, "");
+
+        // // test b - community propose block
+        // Assert.ok(overseer.propose(1, token1, 25, block.timestamp + 604800), "");
+
+        // test c - withdraw when a proposal in effect
+
+
         // // reset project release time to now
         // Assert.ok(controller.setProjectReleaseTime(projectAddress, block.timestamp), "");
         // // test b - withdraw should be successful after
