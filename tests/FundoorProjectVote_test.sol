@@ -65,19 +65,19 @@ contract FundoorProjectTest is ERC1155Holder {
         uint256 tokenCurrencyId = uint256(uint160(address(token)));
         uint256 projectBalanceBefore = token.balanceOf(projectAddress);
         uint256 contributorBalanceBefore = token.balanceOf(address(this));
-
+        FundoorProject project = FundoorProject(projectAddress);
+        uint256 contributorNFTBalanceBefore = project.balanceOf(address(this), tokenCurrencyId);
         Assert.ok(router.contribute(projectAddress, token, testingContributionAmount), "Contribution not implemented correctly");
-
+        
         uint256 projectBalanceAfter = token.balanceOf(projectAddress);
         uint256 contributorBalanceAfter = token.balanceOf(address(this));
-
+        
         // confirm token has been transferred to the project
         Assert.equal(projectBalanceAfter - projectBalanceBefore, testingContributionAmount, "token not transferred correctly");
         Assert.equal(contributorBalanceBefore - contributorBalanceAfter, testingContributionAmount, "token not transferred correctly");
 
         // confirm an NFT receipt is received by the contributor
-        FundoorProject project = FundoorProject(projectAddress);
-        Assert.equal(project.balanceOf(address(this), tokenCurrencyId), testingContributionAmount, "NFT receipt not transferred correctly");
+        Assert.equal(project.balanceOf(address(this), tokenCurrencyId), contributorNFTBalanceBefore + testingContributionAmount, "NFT receipt not transferred correctly");
     }
 
     function initiateProject(IERC20 currency, bool communityOversight, uint256 releaseEpoch) private returns (FundoorProject, address) {
@@ -89,137 +89,119 @@ contract FundoorProjectTest is ERC1155Holder {
         return (project, projectAddress);
     }
 
-    // Test 3 - test withdrawal oversight
-    function testVotableProjectWithdrawal() public {
+    // Test 4 - test community voting
+    function testVotableProjectCommunityActions() public {
+        // initiate project
         (FundoorProject project, address projectAddress) = initiateProject(IERC20(token1), true, block.timestamp);
         FundoorProjectOversight overseer = FundoorProjectOversight(project.getOverseerAddress());
+        // contribute and deposit for voting
+        contributeToProject(projectAddress, token1, 100);
+        project.setApprovalForAll(address(overseer), true);
+        Assert.ok(overseer.depositNFT(token1, 80), "Deposit NFT not implemented correctly");
+        
+        // test a - quorum too low should be rejected
+        try overseer.propose(1, token1, 1, block.timestamp + 604800) returns (bool r) {
+            Assert.equal(r, false, "Did not fail");
+        } catch Error(string memory) {
+            // correctly reverted
+            Assert.ok(true, "quorum too low caught");
+        } catch {
+            Assert.ok(false, "Other error");
+        }
+
+        // test b - deadline too early should be rejected
+        try overseer.propose(1, token1, 25, block.timestamp + 1) returns (bool r) {
+            Assert.equal(r, false, "Did not fail");
+        } catch Error(string memory) {
+            // correctly reverted
+            Assert.ok(true, "deadline too early caught");
+        } catch {
+            Assert.ok(false, "Other error");
+        }
+
+        // test c - proper proposal should be accepted
+        Assert.ok(overseer.propose(1, token1, 25, block.timestamp + 604800), "Propose implemented incorrectly");
+        uint256 blockProposalId = overseer.getProposalNonce() - 1;
+
+        // test d - withdrawal should still be available, if requested and not objected
+        // request withdrawal approval
+        Assert.ok(overseer.requestWithdrawalApproval(token1, 75), "Request error");
+        // shorten time
+        uint256 withdrawalProposalId = overseer.getProposalNonce() - 1;
+        Assert.ok(controller.setProjectProposalDeadline(projectAddress, withdrawalProposalId, block.timestamp), "unable to admin shorten proposal time");
+        // approval withdrawal
+        Assert.ok(overseer.approveWithdrawal(token1, 75), "Approval error");
+        // withdraw
+        Assert.ok(controller.withdrawProjectBalance(projectAddress, token1, 75, false), "Withdrawal error");
+
+        // test e - project should be blocked after passing of deadline (an execution action required)
+        // vote
+        Assert.ok(overseer.vote(blockProposalId, true), "voting error");
+        // shorten time
+        Assert.ok(controller.setProjectProposalDeadline(projectAddress, blockProposalId, block.timestamp), "unable to admin shorten proposal time");
+        // execute
+        Assert.ok(overseer.execute(blockProposalId), "execution error");
+        // new contribution should be blocked
+        try router.contribute(projectAddress, token1, 100) returns (bool r) {
+            Assert.equal(r, false, "Did not fail");
+        } catch Error(string memory) {
+            // correctly reverted
+            Assert.ok(true, "contribution blocked");
+        } catch {
+            Assert.ok(false, "Other error");
+        }
+
+        // test f - admin should be able to unblock a project
+        Assert.ok(controller.unblockProject(projectAddress), "admin unblock unsuccessful");
+        // test contribution
+        contributeToProject(projectAddress, token1, 100);
+        
+        // test g - admin should be able to block a project
+        Assert.ok(controller.blockProject(projectAddress), "admin unblock unsuccessful");
+        // contribution should fail
+        try router.contribute(projectAddress, token1, 100) returns (bool r) {
+            Assert.equal(r, false, "Did not fail");
+        } catch Error(string memory) {
+            // correctly reverted
+            Assert.ok(true, "contribution blocked");
+        } catch {
+            Assert.ok(false, "Other error");
+        }
+
+        // test h - community should be able to propose unblock
+        Assert.ok(overseer.propose(2, token1, 25, block.timestamp + 604800), "unblock not implemented correctly");
+        // check vote weight - should equal to deposited NFT
+        uint256 unblockProposalId = overseer.getProposalNonce() - 1;
+        Assert.equal(overseer.getVoteWeight(address(this), unblockProposalId), 80, "vote weight incorrect");
+        // vote
+        Assert.ok(overseer.vote(unblockProposalId, true), "vote error");
+        // admin shorten time
+        Assert.ok(controller.setProjectProposalDeadline(projectAddress, unblockProposalId, block.timestamp), "deadline update error");
+        // execute
+        Assert.ok(overseer.execute(unblockProposalId), "execution error");
+        // should be able to contribute
         contributeToProject(projectAddress, token1, 100);
 
-        // test a - withdrawal should not work before any community approval
-        try controller.withdrawProjectBalance(projectAddress, token1, 100, false) returns (bool r) {
-            Assert.equal(r, false, "Did not fail");
-        } catch Error(string memory) {
-            // correctly reverted
-            Assert.ok(true, "Premature withdrawal caught");
-            // funds should remain with the project
-            Assert.equal(token1.balanceOf(projectAddress), 100, "Funds left unexpectedly");
-        } catch {
-            Assert.ok(false, "Other error");
-        }
-
-        // test b - over-request should fail
-        try overseer.requestWithdrawalApproval(token1, 120) returns (bool r) {
-            Assert.equal(r, false, "Did not fail");
-        } catch Error(string memory) {
-            // correctly reverted
-            Assert.ok(true, "Over request caught");
-        } catch {
-            Assert.ok(false, "Other error");
-        }
+        // test i - community should be able to request refund
+        // propose
+        Assert.ok(overseer.propose(3, token1, 25, block.timestamp + 604800), "refund not implemented correctly");
+        // check vote weight - should equal to deposited NFT
+        uint256 refundProposalId = overseer.getProposalNonce() - 1;
+        Assert.equal(overseer.getVoteWeight(address(this), unblockProposalId), 80, "vote weight incorrect");
+        // vote
+        Assert.ok(overseer.vote(refundProposalId, true), "refund voting error");
+        // admin shorten time
+        Assert.ok(controller.setProjectProposalDeadline(projectAddress, refundProposalId, block.timestamp), "deadline update error");
+        // execute         
+        Assert.ok(overseer.execute(refundProposalId), "execution error");
+        // redeem voting NFT
+        uint256 balanceBeforeRedeem = project.balanceOf(address(this), token1currencyId);
+        Assert.ok(overseer.redeemNFT(token1, 80), "NFT not redeemed");
+        Assert.equal(balanceBeforeRedeem + 80, project.balanceOf(address(this), token1currencyId), "NFT not redeemed");
+        // claim available refund
+        Assert.ok(project.claimRefund(token1), "unclaimable");
         
-        // test c - request 99 should pass
-        Assert.ok(overseer.requestWithdrawalApproval(token1, 99), "Request not implemented correctly");
-
-        // test d - repeated request should fail, even total is less than or equal to project holding
-        try overseer.requestWithdrawalApproval(token1, 1) returns (bool r) {
-            Assert.equal(r, false, "Did not fail");
-        } catch Error(string memory) {
-            // correctly reverted
-            Assert.ok(true, "Double request caught");
-        } catch {
-            Assert.ok(false, "Other error");
-        }
-
-        // test e - approval attempt should fail before voting deadline (default 1 week)
-        try overseer.approveWithdrawal(token1, 99) returns (bool r) {
-            Assert.equal(r, false, "Did not fail");
-        } catch Error(string memory) {
-            // correctly reverted
-            Assert.ok(true, "premature approval caught");
-        } catch {
-            Assert.ok(false, "Other error");
-        }
-
-        // test f - unobjected withdrawal proposal should lapse and withdrawal should be allowed
-        // admin shorten voting time
-        uint256 proposalId = overseer.getProposalNonce() - 1;
-        Assert.ok(controller.setProjectProposalDeadline(projectAddress, proposalId, block.timestamp), "Deadline unable to reset");
-        // over approve should fail
-        try overseer.approveWithdrawal(token1, 100) returns (bool r) {
-            Assert.equal(r, false, "Did not fail");
-        } catch Error(string memory) {
-            // correctly reverted
-            Assert.ok(true, "over approval caught");
-        } catch {
-            Assert.ok(false, "Other error");
-        }
-        // correct approve withdrawal should pass
-        Assert.ok(overseer.approveWithdrawal(token1, 99), "ApproveWithdrawal not implemented correctly");
-
-        // execute first partial withdrawal
-        uint256 beforeWithdrawal = token1.balanceOf(address(this));
-        Assert.ok(controller.withdrawProjectBalance(projectAddress, token1, 80, false), "");
-        // check balance // contributed 100, approved 99, withdrawn 80
-        Assert.equal(token1.balanceOf(projectAddress), 20, "withdrawal not processed correctly");
-        Assert.equal(token1.balanceOf(address(this)), beforeWithdrawal + 80, "withdrawal not processed correctly");
-
-        // execute remaining withdrawal
-        Assert.ok(controller.withdrawProjectBalance(projectAddress, token1, 19, false), "");
-        // check balance // contributed 100, approved 99, withdrawn 99
-        Assert.equal(token1.balanceOf(projectAddress), 1, "withdrawal not processed correctly");
-        Assert.equal(token1.balanceOf(address(this)), beforeWithdrawal + 99, "withdrawal not processed correctly");
-
-        // test g - objected withdrawal should not be processed
-        // add new currency for fresh test
-        Assert.ok(controller.addProjectCurrency(projectAddress, IERC20(token2)), "");
-        // contribute token2
-        contributeToProject(projectAddress, token2, 100);
-        Assert.ok(overseer.requestWithdrawalApproval(token2, 99), "Request not implemented correctly");
-
-        // authorize NFT to be transferred
-        project.setApprovalForAll(address(overseer), true);
-        // deposit NFT to vote
-        Assert.ok(overseer.depositNFT(token2, 55), "Deposit NFT not implemented correctly");
-        // check balance
-        Assert.equal(project.balanceOf(address(overseer), token2currencyId), 55, "NFT not transferred");
-        Assert.equal(project.balanceOf(address(this), token2currencyId), 45, "NFT not transferred");
-        // refresh proposalId
-        proposalId = overseer.getProposalNonce() - 1;
-        // check voting power
-        Assert.equal(overseer.getVoteWeight(address(this), proposalId), 55, "Voting weight incorrect");
-        Assert.equal(overseer.getVoteWeight(address(this), proposalId - 1), 0, "Wrong proposal voting weight incorrect");
-
-        // vote objection on token2 withdrawal
-        Assert.ok(overseer.vote(proposalId, true), "Voting not implemented correctly");
-        // double voting should fail
-        try overseer.vote(proposalId, false) returns (bool r) {
-            Assert.equal(r, false, "Did not fail");
-        } catch Error(string memory) {
-            // correctly reverted
-            Assert.ok(true, "Double voting caught");
-        } catch {
-            Assert.ok(false, "Other error");
-        }
-
-        // admin shorten voting period
-        Assert.ok(controller.setProjectProposalDeadline(projectAddress, proposalId, block.timestamp), "Shortening unsuccessful");
-
-        // attempt approval over objection should fail
-        try overseer.approveWithdrawal(token2, 99) returns (bool r) {
-            Assert.equal(r, false, "Did not fail");
-        } catch Error(string memory) {
-            // correctly reverted
-            Assert.ok(true, "over approval caught");
-        } catch {
-            Assert.ok(false, "Other error");
-        }
-
-        // test h - Approval below or equal objection should pass
-        Assert.ok(overseer.approveWithdrawal(token2, 44), "approval unsuccessful");
-        // withdrawal
-        Assert.ok(controller.withdrawProjectBalance(projectAddress, token2, 44, false), "withdrawal unsuccessful");
-        Assert.equal(token2.balanceOf(address(this)), 9944, "withdrawal have not left project");
-        Assert.equal(token2.balanceOf(projectAddress), 56, "withdrawal have not left project");
+        // token balance should be 0
+        Assert.equal(token1.balanceOf(projectAddress), 0, "not fully refunded");
     }
-    // Test 4 - test community voting
 }

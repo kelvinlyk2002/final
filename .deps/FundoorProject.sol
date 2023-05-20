@@ -22,7 +22,7 @@ contract FundoorProject is ERC1155, Ownable {
     uint256 private projectReleaseTime;
     bool private projectActive;
     bool private projectBlocked;
-    bool private projectWithdrawn;
+    bool private projectShutdown;
 
     event projectInitiated(address projectOwner, uint256 releaseEpoch);
     event projectCurrencyAdded(IERC20 newCurrency);
@@ -89,14 +89,18 @@ contract FundoorProject is ERC1155, Ownable {
         return projectActive;
     }
 
-    function activateProject() external onlyController returns (bool) {
-        require(!projectWithdrawn, "Unable to reactivate withdrawn project.");
+    function activateProject() private returns (bool) {
+        require(!projectShutdown, "Unable to reactivate project that has shut down.");
         projectActive = true;
         emit projectActivated();
         return true;
     }
 
-    function deactivateProject() external onlyController returns (bool) {
+    function ownerDeactivateProject() external onlyController returns (bool) {
+        return deactivateProject();
+    }
+
+    function deactivateProject() private returns (bool) {
         projectActive = false;
         emit projectDeactivated();
         return true;
@@ -133,7 +137,7 @@ contract FundoorProject is ERC1155, Ownable {
         if(_isShutdown) {
             // deactivate the project
             projectActive = false;
-            projectWithdrawn = true;
+            projectShutdown = true;
         }
 
         return true;
@@ -154,8 +158,8 @@ contract FundoorProject is ERC1155, Ownable {
         return address(this);
     }
 
-    function getProjectWithdrawn() external view returns (bool) {
-        return projectWithdrawn;
+    function getProjectShutdown() external view returns (bool) {
+        return projectShutdown;
     }
 
     function contribute(address _contributor, IERC20 _projectCurrency, uint256 _amount) external onlyActiveProject onlyContributionRouter returns (bool) {        
@@ -176,7 +180,7 @@ contract FundoorProject is ERC1155, Ownable {
         // block funds withdrawal
         projectBlocked = true;
         // block any new contribution
-        assert(this.deactivateProject());
+        assert(deactivateProject());
         emit Blocked();
         return true;
     }
@@ -185,7 +189,7 @@ contract FundoorProject is ERC1155, Ownable {
         // allow funds withdrawal
         projectBlocked = false;
         // allow any new contribution
-        assert(this.activateProject());
+        assert(activateProject());
         emit Unblocked();
         return true;
     }
@@ -193,6 +197,7 @@ contract FundoorProject is ERC1155, Ownable {
     function claimRefund(IERC20 _currency) external returns (bool) {
         // sanity check
         require(refundPot[_currency] > 0, "No funds to be refunded");
+        
         // check if sender holds the related nft
         uint256 currencyId = uint256(uint160(address(_currency)));
         uint256 nftBalance = balanceOf(msg.sender, currencyId);
@@ -210,7 +215,7 @@ contract FundoorProject is ERC1155, Ownable {
 
     function _refundProject(IERC20 _currency) private returns (bool) {
         // unable to refund withdrawn projects
-        require(!projectWithdrawn, "No funds to refund for withdrawn projects.");
+        require(!projectShutdown, "No funds to refund for shut down projects.");
         // moving all remaining funds to the refund pot
         refundPot[_currency] = _currency.balanceOf(address(this));
 
@@ -267,5 +272,10 @@ contract FundoorProject is ERC1155, Ownable {
 
     function setProposalDeadline(uint256 _proposalId, uint256 _newValue) external onlyController returns (bool) {
         return overseer.setProposalDeadline(_proposalId, _newValue);
+    }
+
+    function overseerShutdownProject() external onlyOverseer returns (bool) {
+        projectShutdown = true;
+        return projectShutdown;
     }
 }

@@ -11,9 +11,9 @@ contract FundoorController is Ownable {
     }
 
     // disable a project at contract level
-    function deactiveProject(address _projectAddress) external onlyProjectOwner(_projectAddress) returns (bool) {
+    function deactivateProject(address _projectAddress) external onlyProjectOwner(_projectAddress) returns (bool) {
         FundoorProject project = FundoorProject(_projectAddress);
-        return project.deactivateProject();
+        return project.ownerDeactivateProject();
     }
 
     // withdraw balance

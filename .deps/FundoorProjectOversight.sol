@@ -42,8 +42,8 @@ contract FundoorProjectOversight is ERC1155Holder {
         project = FundoorProject(_projectAddress);
     }
 
-    modifier onlyUnwithdrawnProject() {
-        require(!project.getProjectWithdrawn(), "Withdrawn project cannot be actioned");
+    modifier onlyActiveProject() {
+        require(!project.getProjectShutdown(), "Withdrawn project cannot be actioned");
         _;
     }
 
@@ -78,15 +78,19 @@ contract FundoorProjectOversight is ERC1155Holder {
     }
 
     function redeemNFT(IERC20 _currency, uint256 _amount) external returns (bool) {
-        // transfer NFTs from this contract to voter
         uint256 currencyId = uint256(uint160(address(_currency)));
+        // check if any hold of recent voting if project is not shutdown
+        if(!project.getProjectShutdown()) {
+            require(block.timestamp >= voterEarliestRedeemTimestamp[msg.sender][currencyId], "too early to redeem");
+        }
+        // transfer NFTs from this contract to voter
         project.safeTransferFrom(address(this), msg.sender, currencyId, _amount, "");
         // add holder to voter's registry
         voters[msg.sender][currencyId] -= _amount;
         return true;
     }
 
-    function propose(uint8 _type, IERC20 _currency, uint8 _quorumPercentage, uint256 _deadline) public onlyUnwithdrawnProject returns (bool) {
+    function propose(uint8 _type, IERC20 _currency, uint8 _quorumPercentage, uint256 _deadline) public onlyActiveProject returns (bool) {
         // restrict quorum paramter
         require(_quorumPercentage <= 100, "Quorum will never be met.");     
 
@@ -119,7 +123,7 @@ contract FundoorProjectOversight is ERC1155Holder {
         return voters[_address][currencyId];
     }
 
-    function vote(uint256 _proposalId, bool _vote) external onlyUnwithdrawnProject returns (bool) {
+    function vote(uint256 _proposalId, bool _vote) external onlyActiveProject returns (bool) {
         // msg sender voting weight
         uint256 currencyId = uint256(uint160(address(proposalCurrency[_proposalId])));
         uint256 voteWeight = voters[msg.sender][currencyId];
@@ -147,7 +151,7 @@ contract FundoorProjectOversight is ERC1155Holder {
         return true;
     }
 
-    function execute(uint256 _proposalId) external onlyUnwithdrawnProject returns (bool) {
+    function execute(uint256 _proposalId) external onlyActiveProject returns (bool) {
         // only execute blocking, unblocking, and refund
         require(proposals[_proposalId] != Proposal.OBJECTION, "Objection proposal is not executable");
         // check if voting period has past
@@ -169,6 +173,8 @@ contract FundoorProjectOversight is ERC1155Holder {
         } else if (proposals[_proposalId] == Proposal.REFUND) {
             // refund proposed refund currency
             assert(project.communityRefundProject(proposalCurrency[_proposalId]));
+            // refunded project should be shutdown
+            assert(project.overseerShutdownProject());
         } else {
             revert("Error in proposal type");
         }
@@ -201,7 +207,7 @@ contract FundoorProjectOversight is ERC1155Holder {
         return proposals[_proposalId];
     }
 
-    function requestWithdrawalApproval(IERC20 _currency, uint256 _amount) external onlyUnwithdrawnProject onlyProjectOwner returns (bool) {
+    function requestWithdrawalApproval(IERC20 _currency, uint256 _amount) external onlyActiveProject onlyProjectOwner returns (bool) {
         require(!withdrawalProposed, "Proposal already in place");
         require(_amount <= _currency.balanceOf(address(project)), "Cannot approve more than current ownership");
         withdrawalProposalAmount[_currency] = _amount;
@@ -215,7 +221,7 @@ contract FundoorProjectOversight is ERC1155Holder {
         return resetWithdrawalAmount(_currency);
     }
 
-    function approveWithdrawal(IERC20 _currency, uint256 _amount) external onlyUnwithdrawnProject onlyProjectOwner returns (bool) {
+    function approveWithdrawal(IERC20 _currency, uint256 _amount) external onlyActiveProject onlyProjectOwner returns (bool) {
         require(withdrawalProposed, "No proposal or allowance exhausted");
         require(proposalDeadline[withdrawalObjectionProposalId] <= block.timestamp, "Voting period has not passed");
         // limit withdrawable amount

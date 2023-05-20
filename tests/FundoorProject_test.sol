@@ -65,19 +65,19 @@ contract FundoorProjectTest is ERC1155Holder {
         uint256 tokenCurrencyId = uint256(uint160(address(token)));
         uint256 projectBalanceBefore = token.balanceOf(projectAddress);
         uint256 contributorBalanceBefore = token.balanceOf(address(this));
-
-        Assert.ok(router.contribute(projectAddress, token, testingContributionAmount), "");
-
+        FundoorProject project = FundoorProject(projectAddress);
+        uint256 contributorNFTBalanceBefore = project.balanceOf(address(this), tokenCurrencyId);
+        Assert.ok(router.contribute(projectAddress, token, testingContributionAmount), "Contribution not implemented correctly");
+        
         uint256 projectBalanceAfter = token.balanceOf(projectAddress);
         uint256 contributorBalanceAfter = token.balanceOf(address(this));
-
+        
         // confirm token has been transferred to the project
-        Assert.equal(projectBalanceAfter - projectBalanceBefore, testingContributionAmount, "");
-        Assert.equal(contributorBalanceBefore - contributorBalanceAfter, testingContributionAmount, "");
+        Assert.equal(projectBalanceAfter - projectBalanceBefore, testingContributionAmount, "token not transferred correctly");
+        Assert.equal(contributorBalanceBefore - contributorBalanceAfter, testingContributionAmount, "token not transferred correctly");
 
         // confirm an NFT receipt is received by the contributor
-        FundoorProject project = FundoorProject(projectAddress);
-        Assert.equal(project.balanceOf(address(this), tokenCurrencyId), testingContributionAmount, "");
+        Assert.equal(project.balanceOf(address(this), tokenCurrencyId), contributorNFTBalanceBefore + testingContributionAmount, "NFT receipt not transferred correctly");
     }
 
     function initiateProject(IERC20 _currency, bool _communityOversight, uint256 _releaseEpoch) private returns (FundoorProject, address) {
