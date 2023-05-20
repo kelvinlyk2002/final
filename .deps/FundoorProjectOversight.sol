@@ -239,7 +239,7 @@ contract FundoorProjectOversight is ERC1155Holder {
     }
 
     function getApprovedWithdrawalAmount(IERC20 _currency) external view returns (uint256) {
-        return withdrawalProposalAmount[_currency];
+        return withdrawalApprovedAmount[_currency];
     }
 
     function resetWithdrawalAmount(IERC20 _currency) internal returns (bool) {
