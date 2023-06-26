@@ -29,8 +29,8 @@ contract FundoorProjectOversight is ERC1155Holder {
     mapping(uint256 => mapping(address => bool)) private voted;
     mapping(uint256 => uint8) private quorumPercentage;
     
-    uint256 private votingPeriod = 604800;
     uint256 private withdrawalVotingPeriod = 604800;
+    uint256 private votingPeriod = withdrawalVotingPeriod / 2;
 
     mapping(IERC20 => uint256) private withdrawalProposalAmount;
     mapping(IERC20 => uint256) private withdrawalObjectionAmount;

@@ -100,7 +100,7 @@ contract FundoorProjectTest is ERC1155Holder {
         Assert.ok(overseer.depositNFT(token1, 80), "Deposit NFT not implemented correctly");
         
         // test a - quorum too low should be rejected
-        try overseer.propose(1, token1, 1, block.timestamp + 604800) returns (bool r) {
+        try overseer.propose(1, token1, 1, block.timestamp + 302400) returns (bool r) {
             Assert.equal(r, false, "Did not fail");
         } catch Error(string memory) {
             // correctly reverted
@@ -120,7 +120,7 @@ contract FundoorProjectTest is ERC1155Holder {
         }
 
         // test c - proper proposal should be accepted
-        Assert.ok(overseer.propose(1, token1, 25, block.timestamp + 604800), "Propose implemented incorrectly");
+        Assert.ok(overseer.propose(1, token1, 25, block.timestamp + 302400), "Propose implemented incorrectly");
         uint256 blockProposalId = overseer.getProposalNonce() - 1;
 
         // test d - withdrawal should still be available, if requested and not objected
@@ -169,7 +169,7 @@ contract FundoorProjectTest is ERC1155Holder {
         }
 
         // test h - community should be able to propose unblock
-        Assert.ok(overseer.propose(2, token1, 25, block.timestamp + 604800), "unblock not implemented correctly");
+        Assert.ok(overseer.propose(2, token1, 25, block.timestamp + 302400), "unblock not implemented correctly");
         // check vote weight - should equal to deposited NFT
         uint256 unblockProposalId = overseer.getProposalNonce() - 1;
         Assert.equal(overseer.getVoteWeight(address(this), unblockProposalId), 80, "vote weight incorrect");
@@ -184,7 +184,7 @@ contract FundoorProjectTest is ERC1155Holder {
 
         // test i - community should be able to request refund
         // propose
-        Assert.ok(overseer.propose(3, token1, 25, block.timestamp + 604800), "refund not implemented correctly");
+        Assert.ok(overseer.propose(3, token1, 25, block.timestamp + 302400), "refund not implemented correctly");
         // check vote weight - should equal to deposited NFT
         uint256 refundProposalId = overseer.getProposalNonce() - 1;
         Assert.equal(overseer.getVoteWeight(address(this), unblockProposalId), 80, "vote weight incorrect");
