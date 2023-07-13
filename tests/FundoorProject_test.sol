@@ -12,12 +12,12 @@ import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 // import projects
-import {FundoorLib} from "../.deps/FundoorLib.sol";
-import "../.deps/FundoorProjectFactory.sol";
-import "../.deps/FundoorContributionRouter.sol";
-import "../.deps/FundoorController.sol";
-import "../.deps/FundoorProject.sol";
-import "../.deps/FundoorProjectOversight.sol";
+import {FundoorLib} from "../contracts/FundoorLib.sol";
+import "../contracts/FundoorProjectFactory.sol";
+import "../contracts/FundoorContributionRouter.sol";
+import "../contracts/FundoorController.sol";
+import "../contracts/FundoorProject.sol";
+import "../contracts/FundoorProjectOversight.sol";
 
 contract Token1 is ERC20 {
     constructor() ERC20("Token1", "TK1") {
