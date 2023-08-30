@@ -1,0 +1,59 @@
+{
+	"compiler": {
+		"version": "0.8.9+commit.e5eed63a"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"name": "timenow",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/utils.sol": "FundoorUtils"
+		},
+		"evmVersion": "london",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": true,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/utils.sol": {
+			"keccak256": "0x87b17ef4787e98e440a9c13cb4a30494c2ce46244e943eba8c10dcef124c0492",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://3241f23fa763f39b3a00ea15cad3f29ef58dbeede2e88ba12bae5facd3320128",
+				"dweb:/ipfs/QmVRV5GQ6sQB8TUZiuKrhW6Cgy6j8iSEccEtz9eJqcevCB"
+			]
+		}
+	},
+	"version": 1
+}

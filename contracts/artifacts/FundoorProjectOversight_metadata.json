@@ -1,6 +1,6 @@
 {
 	"compiler": {
-		"version": "0.8.20+commit.a1b79de6"
+		"version": "0.8.9+commit.e5eed63a"
 	},
 	"language": "Solidity",
 	"output": {
@@ -135,6 +135,54 @@
 					}
 				],
 				"name": "getApprovedWithdrawalAmount",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "contract IERC20",
+						"name": "_currency",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "_address",
+						"type": "address"
+					}
+				],
+				"name": "getDepositedWeight",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "contract IERC20",
+						"name": "_currency",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "_address",
+						"type": "address"
+					}
+				],
+				"name": "getEarliestRedeemTimestamp",
 				"outputs": [
 					{
 						"internalType": "uint256",
@@ -394,9 +442,9 @@
 				"name": "propose",
 				"outputs": [
 					{
-						"internalType": "bool",
+						"internalType": "uint256",
 						"name": "",
-						"type": "bool"
+						"type": "uint256"
 					}
 				],
 				"stateMutability": "nonpayable",
@@ -537,14 +585,14 @@
 		"compilationTarget": {
 			"contracts/FundoorProjectOversight.sol": "FundoorProjectOversight"
 		},
-		"evmVersion": "shanghai",
+		"evmVersion": "london",
 		"libraries": {},
 		"metadata": {
 			"bytecodeHash": "ipfs"
 		},
 		"optimizer": {
 			"enabled": true,
-			"runs": 50
+			"runs": 200
 		},
 		"remappings": []
 	},
@@ -654,19 +702,19 @@
 			]
 		},
 		"contracts/FundoorProject.sol": {
-			"keccak256": "0x7861f1f3f5b66e76f9e439bfb3e130d2a2b24cd0df72536e3ef8bae1bc1915b8",
+			"keccak256": "0x5c3a4332d1178dfdb0597cef3ac3a15f91ecbbc6e1245c9e5109617090d958f9",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://77d8ff4f3dfd70d5143a07bd82686b8d5e357923d1637acbee9e312e83cc7f84",
-				"dweb:/ipfs/Qmf6eX8C22FeHE4j2QtfUQdsPJgzG8nbL1h69SmX1pDdJB"
+				"bzz-raw://cf73b990b59efa907c808c99af70d6157268b304851ffab86cce60aea6e5579b",
+				"dweb:/ipfs/QmWpSgHL19rqWMuhoyVe3SbSigizUdMfPu2wUpEsvfuA4o"
 			]
 		},
 		"contracts/FundoorProjectOversight.sol": {
-			"keccak256": "0x1f9143a83d816a0fdae4accbe8a95c3b774d87768071f19af9a766bc467a9f5a",
+			"keccak256": "0x07814269d29e025373f5d516812fe3b201e0a09c0e30d124712d1591f23c62df",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://b324f62ed13bb8871e27fb39cd2648a66d1ea5422f886dc12619026a5720ee03",
-				"dweb:/ipfs/QmPRW5NMa67LBvP4eZYnUELA4n1amNJNmy5ksYyuFZsfN1"
+				"bzz-raw://5522f139691911705a31463a1f174d9e8d88a61cf1b038726eb1ff2d8ace456f",
+				"dweb:/ipfs/QmZuUdDH7SGimUgHSmxSeac4XXtDN91yoVom2eTstgUxYA"
 			]
 		}
 	},

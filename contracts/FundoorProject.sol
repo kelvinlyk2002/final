@@ -110,7 +110,7 @@ contract FundoorProject is ERC1155, Ownable {
         return projectOwner;
     }
 
-    function getProjectCurrencies(uint256) external view returns (IERC20[] memory) {
+    function getProjectCurrencies() external view returns (IERC20[] memory) {
         return projectCurrencies;
     }
 

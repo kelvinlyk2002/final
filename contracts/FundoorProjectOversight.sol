@@ -38,6 +38,9 @@ contract FundoorProjectOversight is ERC1155Holder {
     uint256 private withdrawalObjectionProposalId;
     bool private withdrawalProposed;
 
+    event Proposed(uint256 proposalNonce);
+
+
     constructor(address _projectAddress) {
         project = FundoorProject(_projectAddress);
     }
@@ -77,6 +80,16 @@ contract FundoorProjectOversight is ERC1155Holder {
         return true;
     }
 
+    function getDepositedWeight(IERC20 _currency, address _address) external view returns (uint256) {
+        uint256 currencyId = uint256(uint160(address(_currency)));
+        return voters[_address][currencyId]; 
+    }
+
+    function getEarliestRedeemTimestamp(IERC20 _currency, address _address) external view returns (uint256) {
+        uint256 currencyId = uint256(uint160(address(_currency)));
+        return voterEarliestRedeemTimestamp[_address][currencyId]; 
+    }
+
     function redeemNFT(IERC20 _currency, uint256 _amount) external returns (bool) {
         uint256 currencyId = uint256(uint160(address(_currency)));
         // check if any hold of recent voting if project is not shutdown
@@ -114,6 +127,7 @@ contract FundoorProjectOversight is ERC1155Holder {
         proposalTimestamp[proposalNonce] = block.timestamp;
 
         // increment nonce after registering
+        emit Proposed(proposalNonce);
         proposalNonce++;
         return true;
     }
@@ -211,8 +225,8 @@ contract FundoorProjectOversight is ERC1155Holder {
         require(!withdrawalProposed, "Proposal already in place");
         require(_amount <= _currency.balanceOf(address(project)), "Cannot approve more than current ownership");
         withdrawalProposalAmount[_currency] = _amount;
+        propose(0, _currency, 0, block.timestamp + withdrawalVotingPeriod);
         withdrawalProposed = true;
-        assert(propose(0, _currency, 0, block.timestamp + withdrawalVotingPeriod));
         return true;
     }
 
