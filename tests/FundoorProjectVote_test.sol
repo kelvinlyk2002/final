@@ -199,7 +199,7 @@ contract FundoorProjectTest is ERC1155Holder {
         Assert.ok(overseer.redeemNFT(token1, 80), "NFT not redeemed");
         Assert.equal(balanceBeforeRedeem + 80, project.balanceOf(address(this), token1currencyId), "NFT not redeemed");
         // claim available refund
-        Assert.ok(project.claimRefund(token1), "unclaimable");
+        Assert.ok(project.claimRefund(token1, project.balanceOf(address(this), token1currencyId)), "unclaimable");
         
         // token balance should be 0
         Assert.equal(token1.balanceOf(projectAddress), 0, "not fully refunded");

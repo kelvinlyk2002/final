@@ -17,6 +17,19 @@
 				"type": "constructor"
 			},
 			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "proposalNonce",
+						"type": "uint256"
+					}
+				],
+				"name": "Proposed",
+				"type": "event"
+			},
+			{
 				"inputs": [
 					{
 						"internalType": "contract IERC20",
@@ -194,6 +207,57 @@
 				"type": "function"
 			},
 			{
+				"inputs": [],
+				"name": "getLastWithdrawalProposalId",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_proposalId",
+						"type": "uint256"
+					}
+				],
+				"name": "getNayWeight",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "contract IERC20",
+						"name": "_currency",
+						"type": "address"
+					}
+				],
+				"name": "getObjectedWithdrawalAmount",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
 				"inputs": [
 					{
 						"internalType": "uint256",
@@ -304,6 +368,44 @@
 			{
 				"inputs": [
 					{
+						"internalType": "contract IERC20",
+						"name": "_currency",
+						"type": "address"
+					}
+				],
+				"name": "getProposedWithdrawalAmount",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_proposalId",
+						"type": "uint256"
+					}
+				],
+				"name": "getQuromWeight",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
 						"internalType": "address",
 						"name": "_address",
 						"type": "address"
@@ -328,6 +430,44 @@
 			{
 				"inputs": [],
 				"name": "getWithdrawalProposed",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_proposalId",
+						"type": "uint256"
+					}
+				],
+				"name": "getYayWeight",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_proposalId",
+						"type": "uint256"
+					}
+				],
+				"name": "isExecutable",
 				"outputs": [
 					{
 						"internalType": "bool",
@@ -442,9 +582,9 @@
 				"name": "propose",
 				"outputs": [
 					{
-						"internalType": "uint256",
+						"internalType": "bool",
 						"name": "",
-						"type": "uint256"
+						"type": "bool"
 					}
 				],
 				"stateMutability": "nonpayable",
@@ -592,7 +732,7 @@
 		},
 		"optimizer": {
 			"enabled": true,
-			"runs": 200
+			"runs": 1
 		},
 		"remappings": []
 	},
@@ -702,19 +842,19 @@
 			]
 		},
 		"contracts/FundoorProject.sol": {
-			"keccak256": "0x5c3a4332d1178dfdb0597cef3ac3a15f91ecbbc6e1245c9e5109617090d958f9",
+			"keccak256": "0x06cc8921978f4547f27a0eb92d342ed4628ed1acc4115fc1083af6c107da0873",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://cf73b990b59efa907c808c99af70d6157268b304851ffab86cce60aea6e5579b",
-				"dweb:/ipfs/QmWpSgHL19rqWMuhoyVe3SbSigizUdMfPu2wUpEsvfuA4o"
+				"bzz-raw://130c7be055c0097a06a62c8e8e36dc7ea338cc0a35ce219de5613dc4489a72d6",
+				"dweb:/ipfs/QmRk9FCLsfDVhtNeJjUczco3pegiT7TUU3D5qnUjSyENgE"
 			]
 		},
 		"contracts/FundoorProjectOversight.sol": {
-			"keccak256": "0x07814269d29e025373f5d516812fe3b201e0a09c0e30d124712d1591f23c62df",
+			"keccak256": "0x9260da920c03ea98c738fa72f14db0cb1f426c00de3c3b8b01c2c90b37e07c76",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://5522f139691911705a31463a1f174d9e8d88a61cf1b038726eb1ff2d8ace456f",
-				"dweb:/ipfs/QmZuUdDH7SGimUgHSmxSeac4XXtDN91yoVom2eTstgUxYA"
+				"bzz-raw://1581d8bbca78a3b4fd395046157e824eb3d146e8e8c2e69f1f2ed98bac30f757",
+				"dweb:/ipfs/QmUi3GYrHQz98bTJBxdkTcFzsS7wuFaAeKCDuFV2QnoLD6"
 			]
 		}
 	},

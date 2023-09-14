@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// how to create a library
 pragma solidity ^0.8.9;
 
 // Library Definition

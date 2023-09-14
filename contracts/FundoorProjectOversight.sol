@@ -125,6 +125,7 @@ contract FundoorProjectOversight is ERC1155Holder {
         proposalCurrency[proposalNonce] = _currency;
         proposalDeadline[proposalNonce] = _deadline;
         proposalTimestamp[proposalNonce] = block.timestamp;
+        quorumPercentage[proposalNonce] = _quorumPercentage;
 
         // increment nonce after registering
         emit Proposed(proposalNonce);
@@ -165,18 +166,61 @@ contract FundoorProjectOversight is ERC1155Holder {
         return true;
     }
 
+    function getYayWeight(uint256 _proposalId) public view returns (uint256) {
+        return votes[_proposalId][true];
+    }
+
+    function getNayWeight(uint256 _proposalId) public view returns (uint256) {
+        return votes[_proposalId][false];
+    }
+
+    function getQuromWeight(uint256 _proposalId) public view returns (uint256) {
+        uint256 currencyId = uint256(uint160(address(proposalCurrency[_proposalId])));
+        uint256 total = project.getProjectLifetimeContribution(currencyId);
+        return total * quorumPercentage[_proposalId] / 100;
+    }
+
+    function isExecutable(uint256 _proposalId) public view returns (bool) {
+        if(proposals[_proposalId] == Proposal.OBJECTION) {
+            return false;
+        }
+        if(block.timestamp < proposalDeadline[_proposalId]) {
+            return false;
+        }
+        uint256 yayWeight = getYayWeight(_proposalId);
+        uint256 nayWeight = getNayWeight(_proposalId);
+        if(yayWeight <= nayWeight) {
+            return false;
+        }
+        uint256 quorumWeight = getQuromWeight(_proposalId);
+        if(yayWeight < quorumWeight) {
+            return false;
+        }
+        if(proposalExecuted[_proposalId]){
+            return false;
+        }
+        return true;
+    }
+
     function execute(uint256 _proposalId) external onlyActiveProject returns (bool) {
         // only execute blocking, unblocking, and refund
         require(proposals[_proposalId] != Proposal.OBJECTION, "Objection proposal is not executable");
+
         // check if voting period has past
         require(block.timestamp >= proposalDeadline[_proposalId], "Voting deadline hasn't past.");
+
         // check if yay votes > nay votes
-        require(votes[_proposalId][true] > votes[_proposalId][false], "Majority not met");
+        uint256 yayWeight = getYayWeight(_proposalId);
+        uint256 nayWeight = getNayWeight(_proposalId);
+        require(yayWeight > nayWeight, "Majority not met");
+
         // check if yay votes achieved quorum
-        uint256 currencyId = uint256(uint160(address(proposalCurrency[_proposalId])));
-        uint256 total = project.getProjectLifetimeContribution(currencyId);
-        require(votes[_proposalId][true] > total * quorumPercentage[_proposalId] / 100, "Quorum not met");
+        uint256 quorumWeight = getQuromWeight(_proposalId);
+        require(yayWeight >= quorumWeight, "Quorum not met");
         
+        // check if project has already been executed
+        require(!proposalExecuted[_proposalId], "Proposal has been executed");
+
         // conditions are met
         if(proposals[_proposalId] == Proposal.BLOCK) {
             // block project
@@ -192,6 +236,8 @@ contract FundoorProjectOversight is ERC1155Holder {
         } else {
             revert("Error in proposal type");
         }
+        // register execution
+        proposalExecuted[_proposalId] = true;
         return true;
     }
 
@@ -258,6 +304,14 @@ contract FundoorProjectOversight is ERC1155Holder {
         return resetWithdrawalAmount(_currency);
     }
 
+    function getProposedWithdrawalAmount(IERC20 _currency) external view returns (uint256) {
+        return withdrawalProposalAmount[_currency];
+    }
+
+    function getObjectedWithdrawalAmount(IERC20 _currency) external view returns (uint256) {
+        return withdrawalObjectionAmount[_currency];
+    }
+
     function getApprovedWithdrawalAmount(IERC20 _currency) external view returns (uint256) {
         return withdrawalApprovedAmount[_currency];
     }
@@ -272,5 +326,9 @@ contract FundoorProjectOversight is ERC1155Holder {
 
     function getWithdrawalProposed() external view returns (bool) {
         return withdrawalProposed;
+    }
+
+    function getLastWithdrawalProposalId() external view returns (uint256) {
+        return withdrawalObjectionProposalId;
     }
 }

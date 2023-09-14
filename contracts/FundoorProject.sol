@@ -32,7 +32,7 @@ contract FundoorProject is ERC1155, Ownable {
     
     event Contributed(address contributor, IERC20 token, uint256 amount);
     event Withdrawn(address owner, IERC20 token, uint256 amount);
-    event Refunded(address refunder, IERC20 currency, uint256 balance);
+    event Refunded(address refunder, IERC20 currency, uint256 amountBurnt, uint256 amountRefunded);
     event Blocked();
     event Unblocked();
 
@@ -194,32 +194,37 @@ contract FundoorProject is ERC1155, Ownable {
         return true;
     }
 
-    function claimRefund(IERC20 _currency) external returns (bool) {
+    function claimRefund(IERC20 _currency, uint256 _amount) external returns (bool) {
         // sanity check
         require(refundPot[_currency] > 0, "No funds to be refunded");
         
         // check if sender holds the related nft
         uint256 currencyId = uint256(uint160(address(_currency)));
         uint256 nftBalance = balanceOf(msg.sender, currencyId);
-        require(nftBalance > 0, "No refunds owed to msg sender.");
+        require(nftBalance >= _amount, "Holding not enough for requested refund.");
         // calculate available refunds
-        uint256 availableRefund = nftBalance * _currency.balanceOf(address(this)) / projectLifetimeContribution[currencyId];
-        // transfer available refunds
-        _currency.transfer(msg.sender, availableRefund);
+        uint256 refundValue = _amount * refundPot[_currency] / projectLifetimeContribution[currencyId];
         // burn nft
-        _burn(msg.sender, currencyId, nftBalance);
+        _burn(msg.sender, currencyId, _amount);
+        // transfer available refunds pro-rata
+        _currency.transfer(msg.sender, refundValue);
         // event
-        emit Refunded(msg.sender, _currency, availableRefund);
+        emit Refunded(msg.sender, _currency, _amount, refundValue);
         return true;
     }
 
     function _refundProject(IERC20 _currency) private returns (bool) {
         // unable to refund withdrawn projects
         require(!projectShutdown, "No funds to refund for shut down projects.");
-        // moving all remaining funds to the refund pot
+        // store the amount of the project holding at the time of refund
         refundPot[_currency] = _currency.balanceOf(address(this));
-
+        // block project for new contribution
+        _blockProject();
         return true;
+    }
+
+    function getRefundPot(IERC20 _currency) public view returns (uint256) {
+        return refundPot[_currency];
     }
 
     function adminBlockProject() external onlyController returns (bool) {
