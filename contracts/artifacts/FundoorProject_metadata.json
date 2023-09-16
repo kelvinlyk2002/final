@@ -134,7 +134,13 @@
 					{
 						"indexed": false,
 						"internalType": "uint256",
-						"name": "balance",
+						"name": "amountBurnt",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amountRefunded",
 						"type": "uint256"
 					}
 				],
@@ -453,6 +459,11 @@
 						"internalType": "contract IERC20",
 						"name": "_currency",
 						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_amount",
+						"type": "uint256"
 					}
 				],
 				"name": "claimRefund",
@@ -645,6 +656,25 @@
 						"internalType": "bool",
 						"name": "",
 						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "contract IERC20",
+						"name": "_currency",
+						"type": "address"
+					}
+				],
+				"name": "getRefundPot",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
 					}
 				],
 				"stateMutability": "view",
@@ -1139,11 +1169,11 @@
 			]
 		},
 		"contracts/FundoorProject.sol": {
-			"keccak256": "0x5c3a4332d1178dfdb0597cef3ac3a15f91ecbbc6e1245c9e5109617090d958f9",
+			"keccak256": "0x06cc8921978f4547f27a0eb92d342ed4628ed1acc4115fc1083af6c107da0873",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://cf73b990b59efa907c808c99af70d6157268b304851ffab86cce60aea6e5579b",
-				"dweb:/ipfs/QmWpSgHL19rqWMuhoyVe3SbSigizUdMfPu2wUpEsvfuA4o"
+				"bzz-raw://130c7be055c0097a06a62c8e8e36dc7ea338cc0a35ce219de5613dc4489a72d6",
+				"dweb:/ipfs/QmRk9FCLsfDVhtNeJjUczco3pegiT7TUU3D5qnUjSyENgE"
 			]
 		},
 		"contracts/FundoorProjectOversight.sol": {
